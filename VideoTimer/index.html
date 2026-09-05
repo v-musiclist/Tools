@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同時視聴タイマー</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@400;500;700&family=Yomogi&display=swap');
+
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;font-family:"M PLUS Rounded 1c","Kosugi Maru",sans-serif}
+body{padding:25px;background:linear-gradient(135deg,#fff3f8,#f5f0ff 55%,#effcf8);color:#665866}
+
+/* ==================== 操作画面 ==================== */
+.app{max-width:760px;margin:auto}
+.panel{background:rgba(255,255,255,.92);border:3px solid #fff;border-radius:30px;padding:28px;box-shadow:0 8px 24px rgba(140,91,125,.15)}
+h1{text-align:center;font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:25px;color:#e875a4;margin:0 0 20px}
+
+/* タイマーを一番上に */
+.preview{margin:0 0 24px}
+.preview-title{text-align:center;font-size:13px;color:#9a8396;margin:0 0 6px}
+.overlay{position:relative;width:100%;padding:27px 38px 25px;text-align:center;isolation:isolate;overflow:visible}
+.overlay::before{content:"";position:absolute;inset:5px 8px;z-index:-2;border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(250,248,253,.91) 100%);border:3px solid rgba(91,86,111,.72);box-shadow:0 7px 20px rgba(55,51,70,.20),0 0 0 2px rgba(255,255,255,.78),inset 0 0 0 2px rgba(218,210,231,.52),inset 0 -4px 0 rgba(202,190,220,.18)}
+.overlay::after{content:"☘ ･ﾟ✧ ･ﾟ✧ ･ﾟ✧ ☘";position:absolute;left:50%;top:-7px;transform:translateX(-50%);width:88%;height:20px;overflow:hidden;white-space:nowrap;font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:18px;letter-spacing:8px;line-height:18px;color:rgba(193,181,211,.78);text-shadow:0 2px 0 rgba(255,255,255,.95);z-index:3}
+.ribbon{position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:4px 22px 5px;min-width:135px;border-radius:999px;background:linear-gradient(135deg,#9d7bc4,#c49add 52%,#e7a9c9);border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 8px rgba(88,80,110,.16);color:#fff;font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:13px;letter-spacing:.14em;text-shadow:0 1px 2px rgba(67,61,84,.22);z-index:5}
+.ribbon::before,.ribbon::after{content:"";position:absolute;top:6px;width:17px;height:14px;background:#c3a7dc;z-index:-1}.ribbon::before{left:-12px;clip-path:polygon(100% 0,0 25%,40% 50%,0 75%,100% 100%)}.ribbon::after{right:-12px;clip-path:polygon(0 0,100% 25%,60% 50%,100% 75%,0 100%)}
+.work-info{display:flex;align-items:center;justify-content:center;gap:10px;min-height:29px;padding-top:19px;margin-bottom:7px;color:#625f73;text-shadow:0 1px 0 rgba(255,255,255,.98)}
+.work-info #workTitleView{max-width:calc(100% - 130px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:28px;font-weight:700;letter-spacing:.05em}
+.work-info #workEpisodeView{flex:none;padding:5px 13px 6px;border-radius:999px;background:linear-gradient(135deg,#eadfff,#f8e7f4);border:2px solid #b9a0d7;color:#704d88;box-shadow:0 2px 5px rgba(70,64,88,.10);font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:18px;font-weight:700;letter-spacing:.04em}
+.label{display:inline-block;position:relative;margin-bottom:7px;padding:2px 17px 4px;border-radius:999px;background:linear-gradient(135deg,rgba(239,228,255,.95),rgba(255,238,247,.95));color:#80639a;border:1px solid rgba(187,157,216,.55);font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:16px;font-weight:700;letter-spacing:.16em;text-shadow:0 1px 0 #fff}
+.label::before,.label::after{content:"☘";position:absolute;top:2px;color:#b9aecb;font-size:11px}.label::before{left:4px}.label::after{right:4px}
+.timer{font-family:"M PLUS Rounded 1c","Kosugi Maru",sans-serif;font-size:clamp(66px,9.5vw,108px);font-weight:500;line-height:1;letter-spacing:.055em;font-variant-numeric:tabular-nums;white-space:nowrap;color:#55596c;-webkit-text-stroke:3px rgba(255,255,255,.95);paint-order:stroke fill;text-shadow:0 2px 0 #fff,0 5px 0 rgba(210,202,222,.42),0 7px 12px rgba(76,71,94,.13);transition:color .25s ease,opacity .25s ease,transform .25s ease,filter .25s ease}
+.timer.running{color:#6f5a86}.timer.paused{color:#898895;filter:saturate(.72);opacity:.9}.timer.preparing{color:#8061a0;animation:preparing 1s ease-in-out infinite alternate}.timer.finished{color:#9896a0;animation:finished 1.1s ease-in-out infinite alternate}
+.status{min-height:18px;margin-top:9px;font-family:"Yomogi","Kosugi Maru",sans-serif;font-size:16px;font-weight:700;letter-spacing:.1em;color:#806c91;padding:5px 14px 6px;border-radius:999px;background:rgba(247,237,255,.88);border:1px solid rgba(188,160,218,.55);text-shadow:0 1px 0 #fff}
+.mini{position:absolute;z-index:4;color:#a47ac4;font-family:"Yomogi","Kosugi Maru",sans-serif;opacity:.85}.mini.left{left:21px;top:38px;font-size:18px;transform:rotate(-12deg)}.mini.right{right:21px;top:40px;font-size:15px;transform:rotate(12deg)}
+
+.modes,.buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+button{border:0;border-radius:999px;padding:11px 20px;font:inherit;font-size:16px;cursor:pointer;box-shadow:0 4px 10px rgba(100,70,100,.12)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.mode{background:#eee8f8;color:#796a82}.mode.active{background:#ff9fc4;color:#fff}.start{background:#ffafd0;color:#fff}.pause{background:#c9b5ee;color:#fff}.reset{background:#bde8dc;color:#58766e}
+.card{margin-top:20px;padding:17px;border:2px solid #f2e7ef;border-radius:19px;background:#fff}.card h2{font-size:17px;color:#8a7188;margin:0 0 10px}
+.time{display:flex;gap:18px}.time label{flex:1;display:flex;align-items:center;gap:7px;min-width:0}.time input{width:100%;min-width:0;border:2px solid #eadde7;border-radius:12px;padding:9px 12px;font:inherit;font-size:18px;text-align:center;color:#665866;background:#fff}.time input:focus{outline:none;border-color:#c9b5ee;box-shadow:0 0 0 3px rgba(201,181,238,.18)}.time span{font-size:12px;white-space:nowrap}
+.work-inputs{display:grid;grid-template-columns:1.35fr .8fr;gap:12px}.work-inputs label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#8a7188}.work-inputs input{width:100%;border:2px solid #eadde7;border-radius:12px;padding:10px 12px;font:inherit;font-size:17px;color:#665866;background:#fff}.work-inputs input:focus{outline:none;border-color:#c9b5ee;box-shadow:0 0 0 3px rgba(201,181,238,.18)}
+.check-row{display:flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;color:#8a7188;cursor:pointer}.check-row input{margin:0;width:16px;height:16px;accent-color:#c9a7e0}
+.hint{font-size:13px;opacity:.65;margin:8px 0 0;line-height:1.6}.hidden{display:none!important}.control-status{text-align:center;margin-top:15px;min-height:22px;opacity:.75}
+
+/* ==================== OBS専用 ==================== */
+body.obs{padding:0;background:transparent;overflow:hidden}
+.obs .app{width:100vw;height:100vh;max-width:none;margin:0;display:flex;align-items:center;justify-content:center;padding:0}
+.obs .panel{width:auto;max-width:none;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+.obs .preview{margin:0;width:auto}
+.obs .preview-title,.obs .controls{display:none}
+.obs .overlay{width:max-content;min-width:510px;padding:27px 38px 25px}
+.obs .overlay::before{inset:5px 8px;border:3px solid #6f5a78;box-shadow:0 0 0 2px rgba(255,255,255,.95),0 7px 20px rgba(55,51,70,.20),inset 0 0 0 2px rgba(255,255,255,.75),inset 0 -4px 0 rgba(202,190,220,.18)}
+.obs .work-info #workTitleView{max-width:380px}
+.obs .dots{display:none}
+
+.dots{font-size:20px;letter-spacing:7px;color:#c6a5d6;margin-top:15px}
+@keyframes preparing{from{opacity:.72}to{opacity:1}}@keyframes finished{from{opacity:.68}to{opacity:1}}
+@media(max-width:600px){body{padding:15px}.panel{padding:20px}.time{gap:14px}.time label{gap:5px}.work-inputs{grid-template-columns:1fr}.overlay{padding-left:28px;padding-right:28px}.obs .overlay{min-width:0;max-width:calc(100vw - 20px);padding-left:25px;padding-right:25px}.obs .work-info #workTitleView{max-width:65vw}.obs .overlay::before{inset:5px 3px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <section class="preview">
+      <div class="preview-title">タイマー表示</div>
+      <div class="overlay">
+        <div class="ribbon">同時視聴</div>
+        <span class="mini left">☘</span>
+        <span class="mini right">✧ ☘</span>
+        <div class="work-info"><span id="workTitleView"></span><span id="workEpisodeView"></span></div>
+        <div id="label" class="label">経過時間</div>
+        <div id="timer" class="timer running">00:00:00</div>
+        <div id="status" class="status">待機中</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <h1>同時視聴タイマー 操作画面</h1>
+      <div class="modes"><button id="up" class="mode active" type="button">↑ カウントアップ</button><button id="down" class="mode" type="button">↓ カウントダウン</button></div>
+
+      <div class="card">
+        <h2>配信内容</h2>
+        <div class="work-inputs">
+          <label>作品名<input id="workTitle" type="text" maxlength="60" placeholder="例：モンスター"></label>
+          <label>話数・回数<input id="workEpisode" type="text" maxlength="30" placeholder="例：第12話 / #12 / 2周目"></label>
+        </div>
+        <label class="check-row"><input id="showEpisode" type="checkbox" checked><span>話数・回数をOBS画面に表示する</span></label>
+        <p class="hint">映画など話数がない作品はOFFにしてください。作品名だけ表示できます。</p>
+      </div>
+
+      <div id="upCard" class="card"><h2>カウントアップ開始時間</h2><div class="time">
+        <label><input id="upH" type="number" min="0" max="999" value="0"><span>時間</span></label>
+        <label><input id="upM" type="number" min="0" max="59" value="0"><span>分</span></label>
+        <label><input id="upS" type="number" min="0" max="59" value="0"><span>秒</span></label>
+      </div><p class="hint">例：1時間30分なら 01:30:00 からカウント開始</p></div>
+
+      <div id="downCard" class="card hidden"><h2>カウントダウン時間</h2><div class="time">
+        <label><input id="downH" type="number" min="0" max="999" value="1"><span>時間</span></label>
+        <label><input id="downM" type="number" min="0" max="59" value="0"><span>分</span></label>
+        <label><input id="downS" type="number" min="0" max="59" value="0"><span>秒</span></label>
+      </div><p class="hint">例：1時間30分なら 01:30:00 からカウントダウン</p></div>
+
+      <div class="card"><h2>準備時間</h2><div class="time">
+        <label><input id="prepH" type="number" min="0" max="999" value="0"><span>時間</span></label>
+        <label><input id="prepM" type="number" min="0" max="59" value="0"><span>分</span></label>
+        <label><input id="prepS" type="number" min="0" max="59" value="10"><span>秒</span></label>
+      </div><p class="hint">スタート後、この時間を数えてから本編タイマーを開始します。</p></div>
+
+      <div class="buttons" style="margin-top:20px"><button id="start" class="start" type="button">♡ スタート</button><button id="pause" class="pause" type="button">Ⅱ 一時停止</button><button id="reset" class="reset" type="button">↻ リセット</button></div>
+      <div id="controlStatus" class="control-status">待機中</div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY='watch-timer-html-only-v3';
+  const CHANNEL='watch-timer-html-only-channel-v3';
+  const $=id=>document.getElementById(id);
+  const isObs=new URLSearchParams(location.search).get('obs')==='1';
+  if(isObs) document.body.classList.add('obs');
+
+  let bc=null;
+  try{bc=new BroadcastChannel(CHANNEL)}catch(e){}
+
+  const defaults={
+    mode:'up',running:false,started:false,preparing:false,finished:false,
+    workTitle:'',workEpisode:'',showEpisode:true,
+    upStart:0,downDuration:3600,prepDuration:10,
+    elapsed:0,prepElapsed:0,timerStartedAt:null,prepStartedAt:null
+  };
+
+  let state=load();
+  function load(){try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return {...defaults}}}
+  function save(){localStorage.setItem(KEY,JSON.stringify(state));if(bc)try{bc.postMessage(state)}catch(e){}}
+  function adopt(next){if(!next)return;state={...defaults,...next};render(false)}
+  if(bc)bc.onmessage=e=>adopt(e.data);
+  window.addEventListener('storage',e=>{if(e.key===KEY)adopt(load())});
+
+  function clampInt(v,max=Infinity){let x=Math.floor(Number(v));if(!Number.isFinite(x)||x<0)x=0;return Math.min(x,max)}
+  function timeSec(prefix){return clampInt($(prefix+'H').value,999)*3600+clampInt($(prefix+'M').value,59)*60+clampInt($(prefix+'S').value,59)}
+  function setTimeInputs(total,prefix){total=Math.max(0,Math.floor(total||0));$(prefix+'H').value=Math.floor(total/3600);$(prefix+'M').value=Math.floor(total%3600/60);$(prefix+'S').value=total%60}
+  function fmt(v){v=Math.max(0,Math.floor(v));const h=Math.floor(v/3600),m=Math.floor(v%3600/60),s=v%60;return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':')}
+
+  function currentPrep(){
+    if(!state.preparing)return state.prepElapsed;
+    return Math.min(state.prepDuration,state.prepElapsed+(Date.now()-state.prepStartedAt)/1000);
+  }
+  function currentElapsed(){
+    if(state.preparing)return state.elapsed;
+    if(state.running&&state.timerStartedAt!==null)return state.elapsed+(Date.now()-state.timerStartedAt)/1000;
+    return state.elapsed;
+  }
+  function currentRemaining(){return Math.max(0,state.downDuration-currentElapsed())}
+
+  function saveProgressSnapshot(){
+    if(state.preparing)state.prepElapsed=currentPrep();
+    else if(state.running)state.elapsed=currentElapsed();
+    state.timerStartedAt=null;state.prepStartedAt=null;
+  }
+
+  function beginMainTimer(){
+    state.preparing=false;
+    state.prepElapsed=state.prepDuration;
+    state.elapsed=state.mode==='up'?state.upStart:0;
+    state.timerStartedAt=Date.now();
+    state.prepStartedAt=null;
+    state.running=true;
+    state.started=true;
+    state.finished=false;
+    save();
+  }
+
+  function updateRunning(){
+    if(!state.running)return;
+    if(state.preparing){
+      if(currentPrep()>=state.prepDuration){beginMainTimer();return;}
+      return;
+    }
+    if(state.mode==='down'&&state.downDuration>0&&currentElapsed()>=state.downDuration){
+      state.elapsed=state.downDuration;state.timerStartedAt=null;state.running=false;state.finished=true;save();
+    }
+  }
+
+  function drawTimer(){
+    updateRunning();
+    const preparing=state.running&&state.preparing;
+    let value;
+    if(preparing)value=Math.max(0,state.prepDuration-currentPrep());
+    else if(state.mode==='down')value=currentRemaining();
+    else value=currentElapsed();
+
+    $('timer').textContent=fmt(value);
+    $('timer').className='timer '+(preparing?'preparing':state.finished?'finished':state.started&&!state.running?'paused':'running');
+    $('label').textContent=preparing?'準備中':state.finished?'終了':state.mode==='down'?'残り時間':'経過時間';
+    $('status').textContent=preparing?'準備中…':state.finished?'00:00:00 到達':state.running?'視聴中':state.started?'一時停止中':'待機中';
+    if(!isObs)$('controlStatus').textContent=$('status').textContent;
+  }
+
+  function syncInputs(){
+    if(isObs)return;
+    $('workTitle').value=state.workTitle||'';
+    $('workEpisode').value=state.workEpisode||'';
+    $('showEpisode').checked=state.showEpisode!==false;
+    setTimeInputs(state.upStart,'up');
+    setTimeInputs(state.downDuration,'down');
+    setTimeInputs(state.prepDuration,'prep');
+  }
+
+  function render(syncForm=true){
+    $('workTitleView').textContent=state.workTitle||'';
+    $('workEpisodeView').textContent=state.workEpisode||'';
+    $('workTitleView').style.display=state.workTitle?'':'none';
+    $('workEpisodeView').style.display=state.showEpisode&&state.workEpisode?'inline-block':'none';
+
+    if(!isObs){
+      $('up').classList.toggle('active',state.mode==='up');
+      $('down').classList.toggle('active',state.mode==='down');
+      $('upCard').classList.toggle('hidden',state.mode!=='up');
+      $('downCard').classList.toggle('hidden',state.mode!=='down');
+      if(syncForm)syncInputs();
+      $('pause').textContent=state.running?'Ⅱ 一時停止':(state.started&&!state.finished?'▶ 再開':'Ⅱ 一時停止');
+    }
+    drawTimer();
+  }
+
+  function collectSettings(){
+    state.upStart=timeSec('up');
+    state.downDuration=timeSec('down');
+    state.prepDuration=timeSec('prep');
+    state.workTitle=$('workTitle').value.trim();
+    state.workEpisode=$('workEpisode').value.trim();
+    state.showEpisode=$('showEpisode').checked;
+  }
+
+  function saveSettings(){
+    collectSettings();
+    if(!state.running&&!state.started){
+      state.elapsed=state.mode==='up'?state.upStart:0;
+      state.prepElapsed=0;
+      state.finished=false;
+    }
+    save();
+    // 入力欄は再描画で書き戻さず、そのまま維持
+    render(false);
+  }
+
+  if(!isObs){
+    ['workTitle','workEpisode','upH','upM','upS','downH','downM','downS','prepH','prepM','prepS'].forEach(id=>$(id).addEventListener('input',saveSettings));
+    $('showEpisode').addEventListener('change',saveSettings);
+
+    $('up').onclick=()=>{
+      if(state.running)return;
+      collectSettings();state.mode='up';
+      if(!state.started){state.elapsed=state.upStart;state.prepElapsed=0;state.finished=false}
+      save();render();
+    };
+    $('down').onclick=()=>{
+      if(state.running)return;
+      collectSettings();state.mode='down';
+      if(!state.started){state.elapsed=0;state.prepElapsed=0;state.finished=false}
+      save();render();
+    };
+
+    $('start').onclick=()=>{
+      collectSettings();
+      state.started=true;state.running=true;state.finished=false;state.elapsed=state.mode==='up'?state.upStart:0;state.prepElapsed=0;state.timerStartedAt=null;state.prepStartedAt=null;
+      if(state.prepDuration>0){state.preparing=true;state.prepStartedAt=Date.now()}
+      else{state.preparing=false;state.timerStartedAt=Date.now()}
+      save();render(false);
+    };
+
+    $('pause').onclick=()=>{
+      if(state.running){
+        saveProgressSnapshot();
+        state.running=false;state.started=true;save();render(false);return;
+      }
+      if(state.started&&!state.finished){
+        state.running=true;
+        if(state.preparing)state.prepStartedAt=Date.now();
+        else state.timerStartedAt=Date.now();
+        save();render(false);
+      }
+    };
+
+    $('reset').onclick=()=>{
+      collectSettings();
+      state.running=false;state.started=false;state.preparing=false;state.finished=false;state.timerStartedAt=null;state.prepStartedAt=null;state.elapsed=state.mode==='up'?state.upStart:0;state.prepElapsed=0;
+      save();render(false);
+    };
+  }
+
+  // 初期表示。カウントアップ/ダウンの設定値を待機画面にも反映
+  if(!state.started&&!state.running&&!state.finished){
+    state.elapsed=state.mode==='up'?state.upStart:0;
+    state.prepElapsed=0;
+  }
+  render(true);
+
+  function loop(){drawTimer();requestAnimationFrame(loop)}
+  loop();
+})();
+</script>
+</body>
+</html>
