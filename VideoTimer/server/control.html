@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>同時視聴タイマー - 操作画面</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Yomogi&display=swap');
+*{box-sizing:border-box}body{margin:0;padding:25px;background:linear-gradient(135deg,#fff3f8,#f5f0ff 55%,#effcf8);color:#665866;font-family:"Yomogi","Kosugi Maru",sans-serif}
+.panel{max-width:760px;margin:auto;background:rgba(255,255,255,.92);border:3px solid #fff;border-radius:30px;padding:28px;box-shadow:0 8px 24px rgba(140,91,125,.15)}
+h1{text-align:center;font-size:25px;color:#e875a4;margin:0 0 20px}.modes,.buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+button{border:0;border-radius:999px;padding:11px 20px;font:inherit;font-size:16px;cursor:pointer;box-shadow:0 4px 10px rgba(100,70,100,.12)}
+.mode{background:#eee8f8;color:#796a82}.mode.active{background:#ff9fc4;color:#fff}.start{background:#ffafd0;color:#fff}.pause{background:#c9b5ee;color:#fff}.reset{background:#bde8dc;color:#58766e}
+.card{margin-top:20px;padding:17px;border:2px solid #f2e7ef;border-radius:19px;background:#fff}.card h2{font-size:17px;color:#8a7188;margin:0 0 10px}.time{display:flex;gap:8px}.time label{flex:1;display:flex;align-items:center;gap:4px}.time input{width:100%;min-width:0;border:2px solid #eadde7;border-radius:12px;padding:9px 7px;font:inherit;font-size:18px}.time span{font-size:12px;white-space:nowrap}
+.work-inputs{display:grid;grid-template-columns:1.35fr .8fr;gap:12px}
+.work-inputs label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#8a7188}
+.work-inputs input{width:100%;border:2px solid #eadde7;border-radius:12px;padding:10px 12px;font:inherit;font-size:17px;color:#665866;background:#fff}
+.work-inputs input:focus{outline:none;border-color:#c9b5ee;box-shadow:0 0 0 3px rgba(201,181,238,.18)}
+.hint{font-size:13px;opacity:.65;margin:8px 0 0}.hidden{display:none}.status{text-align:center;margin-top:15px;min-height:22px;opacity:.75}
+@media(max-width:600px){.work-inputs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="panel">
+<h1>♡ 同時視聴タイマー 操作画面 ♡</h1>
+<div class="modes"><button id="up" class="mode active">↑ カウントアップ</button><button id="down" class="mode">↓ カウントダウン</button></div>
+
+<div class="card">
+<h2>配信内容</h2>
+<div class="work-inputs">
+  <label>作品名<input id="workTitle" type="text" maxlength="60" placeholder="例：モンスター"></label>
+  <label>話数・回数<input id="workEpisode" type="text" maxlength="30" placeholder="例：第12話 / #12 / 2周目"></label>
+</div>
+<label class="check-row"><input id="showEpisode" type="checkbox" checked><span>話数・回数をOBS画面に表示する</span></label>
+<p class="hint">映画など話数がない作品はOFFにしてください。作品名だけ表示できます。</p>
+</div>
+
+<div id="upCard" class="card"><h2>カウントアップ開始時間</h2><div class="time">
+<label><input id="upH" type="number" min="0" max="999" value="0"><span>時間</span></label>
+<label><input id="upM" type="number" min="0" max="59" value="0"><span>分</span></label>
+<label><input id="upS" type="number" min="0" max="59" value="0"><span>秒</span></label>
+</div><p class="hint">例：1時間30分なら 01:30:00 からカウント開始</p></div>
+
+<div id="downCard" class="card hidden"><h2>カウントダウン時間</h2><div class="time">
+<label><input id="downH" type="number" min="0" max="999" value="1"><span>時間</span></label>
+<label><input id="downM" type="number" min="0" max="59" value="0"><span>分</span></label>
+<label><input id="downS" type="number" min="0" max="59" value="0"><span>秒</span></label>
+</div><p class="hint">例：1時間30分なら 01:30:00 からカウントダウン</p></div>
+
+<div class="card"><h2>準備時間</h2><div class="time">
+<label><input id="prepH" type="number" min="0" max="999" value="0"><span>時間</span></label>
+<label><input id="prepM" type="number" min="0" max="59" value="0"><span>分</span></label>
+<label><input id="prepS" type="number" min="0" max="59" value="10"><span>秒</span></label>
+</div><p class="hint">スタート後、この時間を数えてから本編タイマーを開始します。</p></div>
+
+<div class="buttons" style="margin-top:20px"><button id="start" class="start">♡ スタート</button><button id="pause" class="pause">Ⅱ 一時停止</button><button id="reset" class="reset">↻ リセット</button></div>
+<div id="status" class="status">待機中</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let state={
+  mode:"up",running:false,preparing:false,finished:false,currentSeconds:0,
+  prepRemaining:0,upStart:0,downDuration:3600,prepDuration:10,
+  workTitle:"",workEpisode:"",showEpisode:true,version:4
+};
+
+function num(id){return Math.max(0,Math.floor(Number($(id).value)||0))}
+function sec(p){return num(p+"H")*3600+num(p+"M")*60+num(p+"S")}
+function splitSec(v,p){
+  v=Math.max(0,Math.floor(v));
+  $(p+"H").value=Math.floor(v/3600);
+  $(p+"M").value=Math.floor(v%3600/60);
+  $(p+"S").value=v%60;
+}
+function collect(){
+  return {
+    upStart:sec("up"), downDuration:sec("down"), prepDuration:sec("prep"),
+    workTitle:$("workTitle").value.trim(),
+    workEpisode:$("workEpisode").value.trim(),
+    showEpisode:$("showEpisode").checked
+  };
+}
+function render(){
+  $("up").classList.toggle("active",state.mode==="up");
+  $("down").classList.toggle("active",state.mode==="down");
+  $("upCard").classList.toggle("hidden",state.mode!=="up");
+  $("downCard").classList.toggle("hidden",state.mode!=="down");
+
+  if(state.finished)$("status").textContent="カウントダウン終了";
+  else if(state.preparing)$("status").textContent="準備中…";
+  else if(state.running)$("status").textContent=state.mode==="up"?"カウント中":"カウントダウン中";
+  else if(state.started)$("status").textContent="一時停止中";
+  else $("status").textContent="待機中";
+
+  $("pause").textContent=state.running?"Ⅱ 一時停止":(state.started?"▶ 再開":"Ⅱ 一時停止");
+}
+async function getState(){
+  const r=await fetch("/api/state?t="+Date.now(),{cache:"no-store"});
+  if(r.ok){state=await r.json();render();}
+}
+async function post(command,extra={}){
+  const r=await fetch("/api/state",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({command,...extra})
+  });
+  if(!r.ok)throw new Error("server");
+  state=await r.json();render();
+}
+
+$("up").onclick=async()=>{if(!state.running)try{await post("mode",{mode:"up"})}catch(e){}};
+$("down").onclick=async()=>{if(!state.running)try{await post("mode",{mode:"down"})}catch(e){}};
+
+$("start").onclick=async()=>{
+  try{await post("set",collect());await post("start")}catch(e){
+    $("status").textContent="サーバーに接続できません";
+  }
+};
+$("pause").onclick=async()=>{
+  try{await post(state.running?"pause":(state.started?"resume":"pause"))}catch(e){}
+};
+$("reset").onclick=async()=>{
+  try{await post("set",collect());await post("reset")}catch(e){}
+};
+
+const settingIds=["upH","upM","upS","downH","downM","downS","prepH","prepM","prepS","workTitle","workEpisode"];
+let timer=null;
+function changed(){
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{try{await post("set",collect())}catch(e){}},250);
+}
+settingIds.forEach(id=>$(id).addEventListener("input",changed));
+$("showEpisode").addEventListener("change",changed);
+
+getState().then(()=>{splitSec(state.upStart,"up");splitSec(state.downDuration,"down");splitSec(state.prepDuration,"prep");$("workTitle").value=state.workTitle||"";$("workEpisode").value=state.workEpisode||"";$("showEpisode").checked=state.showEpisode!==false;}).catch(()=>{$("status").textContent="サーバーを起動してください";});
+setInterval(()=>getState().catch(()=>{}),500);
+</script>
+</body>
+</html>

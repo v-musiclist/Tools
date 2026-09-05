@@ -1,0 +1,16 @@
+{
+  "mode": "up",
+  "running": false,
+  "preparing": false,
+  "finished": false,
+  "currentSeconds": 10.643356000015046,
+  "prepRemaining": 0,
+  "upStart": 0,
+  "downDuration": 3600.0,
+  "prepDuration": 5.0,
+  "workTitle": "aaa",
+  "workEpisode": "",
+  "showEpisode": true,
+  "started": true,
+  "version": 4
+}
