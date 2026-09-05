@@ -18,8 +18,9 @@
 ・不具合などについてはXなどの配布ポストなどにリポストなどをしてください。
 
 ## VideoTimer
-同時視聴用タイマー
-<br>コントローラー用URL<br>
+同時視聴用タイマー<br>
+確認済：Windows 11, OBS 32.1.2<br>
+コントローラー用URL<br>
 ドッグ→カスタムドッグで下記URLを設定<br>
 https://v-musiclist.github.io/Tools/VideoTimer/
 <br>画面用URL(幅800 高さ300)<br>
