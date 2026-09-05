@@ -25,3 +25,4 @@ https://v-musiclist.github.io/Tools/VideoTimer/
 <br>画面用URL(幅800 高さ300)<br>
 ソース→ブラウザで下記URLを設定その際に上記幅と高さを設定する(あくまで推奨)<br>
 https://v-musiclist.github.io/Tools/VideoTimer/?obs=1
+<br>設定後変換→変換の編集などで大きさの調整や、位置調整などを行ってください。
