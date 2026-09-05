@@ -108,7 +108,7 @@ body.obs{padding:0;background:transparent;overflow:hidden}
         <label><input id="prepS" type="number" min="0" max="59" value="10"><span>秒</span></label>
       </div><p class="hint">スタート後、この時間を数えてから本編タイマーを開始します。</p></div>
 
-      <div class="buttons" style="margin-top:20px"><button id="start" class="start" type="button">♡ スタート</button><button id="pause" class="pause" type="button">Ⅱ 一時停止</button><button id="reset" class="reset" type="button">↻ リセット</button></div>
+      <div class="buttons" style="margin-top:20px"><button id="start" class="start" type="button">☘ スタート</button><button id="pause" class="pause" type="button">Ⅱ 一時停止</button><button id="reset" class="reset" type="button">↻ リセット</button></div>
       <div id="controlStatus" class="control-status">待機中</div>
     </section>
   </div>
@@ -261,7 +261,7 @@ body.obs{padding:0;background:transparent;overflow:hidden}
     $('down').onclick=()=>{
       if(state.running)return;
       collectSettings();state.mode='down';
-      if(!state.started){state.elapsed=0;state.prepElapsed=0;state.finished=false}
+      if(!state.started){state.elapsed=state.upStart;state.prepElapsed=0;state.finished=false}
       save();render();
     };
 
