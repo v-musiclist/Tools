@@ -21,17 +21,21 @@
 ## VideoTimer
 同時視聴用タイマー<br>
 確認済：Windows 11, OBS 32.1.2<br>
-コントローラー用URL<br>
+コントローラー用URL（カスタムドッグ）<br>
 ドッグ→カスタムドッグで下記URLを設定<br>
 https://v-musiclist.github.io/Tools/VideoTimer/
-<br>画面用URL(幅800 高さ300)<br>
+<br>OBS表示用URL（ブラウザソース：幅800 高さ300）<br>
 ソース→ブラウザで下記URLを設定その際に上記幅と高さを設定する(あくまで推奨)<br>
 https://v-musiclist.github.io/Tools/VideoTimer/?obs=1
 <br>設定後変換→変換の編集などで大きさの調整や、位置調整などを行ってください。
 
 ## SetList
-配信用セットリスト表示<br>
+セットリスト<br>
+確認済：Windows 11, OBS 32.1.2<br>
 コントローラー用URL（カスタムドッグ）<br>
+ドッグ→カスタムドッグで下記URLを設定<br>
 https://v-musiclist.github.io/Tools/SetList/
-<br>OBS表示用URL（ブラウザソース）<br>
+<br>OBS表示用URL（ブラウザソース：幅400 高さ500）<br>
+ソース→ブラウザで下記URLを設定その際に上記幅と高さを設定する(あくまで推奨)<br>
 https://v-musiclist.github.io/Tools/SetList/?obs=1
+<br>設定後変換→変換の編集などで大きさの調整や、位置調整などを行ってください。
